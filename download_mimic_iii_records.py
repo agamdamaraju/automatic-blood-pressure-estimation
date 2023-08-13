@@ -1,17 +1,9 @@
-
-""" Download script for MIMIC-III data
-
-In order to reproduce the results in the Sensors publication "Assessment of non-invasive blood pressure prediction from
-PPG and rPPG signals using deep learning" the exact same data as used in the paper is downloaded. The record names are
-provided in a text file. The scripts downloads those records, extract PPG and ABP data and performs peak detection on the
-ABP (systolic and diastolic peaks of the ABP signals to generate systolic and diastolic blood pressure values as ground
-truth) and PPG signals. ABP and PPG signals as well as the detected peaks are stored in .h5 files.
-
+"""
 File: download_mimic_iii_records.py
-Author: Dr.-Ing. Fabian Schrumpf
-E-Mail: Fabian.Schrumpf@htwk-leipzig.de
-Date created: 8/4/2021
-Date last modified: 8/4/2021
+Author: Agam Damaraju
+E-Mail: agamdamaraju@hotmail.com
+Date created: 19/2/2023
+Date last modified: 10/5/2023
 """
 
 from os.path import expanduser, join, isdir
@@ -25,21 +17,6 @@ import wfdb
 import numpy as np
 import heartpy as hp
 import h5py, time, threading
- 
-# helper function to find minima between two macima
-# def find_minima(sig, pks, fs):
-#     min_pks = []
-#     for i in range(0,len(pks)):
-#         pks_curr = pks[i]
-#         if i == len(pks)-1:
-#             pks_next = len(sig)
-#         else:
-#             pks_next = pks[i+1]
-#
-#         sig_win = sig[pks_curr:pks_next]
-#         if len(sig_win) < 1.5*fs:
-#             min_pks.append(np.argmin(sig_win) + pks_curr)
-#     return min_pks
 
 def download_mimic_iii_records(RecordFiles, OutputPath):
     count = 0 
@@ -66,27 +43,6 @@ def download_mimic_iii_records(RecordFiles, OutputPath):
             else:
                 continue
 
-            # detect systolic and diastolic peaks using heartpy
-            # try:
-            #     abp_FidPoints = hp.process(abp, fs)
-            # except hp.exceptions.BadSignalWarning:
-            #     continue
-            #
-            # ValidPks = abp_FidPoints[0]['binary_peaklist']
-            # abp_sys_pks = abp_FidPoints[0]['peaklist']
-            # abp_sys_pks = list(compress(abp_sys_pks, ValidPks == 1))
-            # abp_dia_pks = find_minima(abp, abp_sys_pks, fs)
-            #
-            # try:
-            #     ppg_FidPoints = hp.process(ppg, fs)
-            # except hp.exceptions.BadSignalWarning:
-            #     continue
-            #
-            # ValidPks = ppg_FidPoints[0]['binary_peaklist']
-            # ppg_pks = ppg_FidPoints[0]['peaklist']
-            # ppg_pks = list(compress(ppg_pks, ValidPks == 1))
-            # ppg_onset_pks = find_minima(ppg, ppg_pks, fs)
-
             # save ABP and PPG signals as well as detected peaks in a .h5 file
             SubjectName = file.split('/')[1]
             SubjectName = SubjectName.split('_')[0]
@@ -97,57 +53,16 @@ def download_mimic_iii_records(RecordFiles, OutputPath):
             with h5py.File(join(SubjectFolder, file.split('/')[1] + ".h5"),'w') as f:
                 signals = np.concatenate((abp[:,np.newaxis],ppg[:,np.newaxis]), axis=1)
                 f.create_dataset('val', signals.shape, data=signals)
-                # f.create_dataset('nB2', (1,len(ppg_onset_pks)), data=ppg_onset_pks)
-                # f.create_dataset('nA2', (1,len(ppg_pks)), data=ppg_pks)
-                # f.create_dataset('nB3', (1,len(abp_dia_pks)), data=abp_dia_pks)
-                # f.create_dataset('nA3', (1,len(abp_sys_pks)), data=abp_sys_pks)
             count += 1
         else:
             print("Sleeping for 1/6th minute...")
             time.sleep(10)
     
     print('script finished')
-
-# def main(RecordsFile, OutputPath):
-#     # load record names from text file
-#     with open(RecordsFile, 'r') as f:
-#         RecordFiles = f.read()
-#         RecordFiles = RecordFiles.split("\n")
-#     threads = []
-#     j = 0
-#     i = 1
-#     while True:
-#         if i <= 6:
-#             th = threading.Thread(target=download_mimic_iii_records, args=(RecordFiles[j:(5823*i)+1], OutputPath), daemon=True).start()
-#             threads.append(th)
-#             j = (5823*i)+1
-#             i += 1
-#             print("dfdsfsafa", threads)
-#         else:
-#             for t in threads:
-#                 if not t.is_alive():
-#                     t.handled = True
-#         threads = [t for t in threads if not t.handled]
-#
-#     """threading.Thread(target=download_mimic_iii_records, args=(RecordFiles[:5824], OutputPath), daemon=True)
-#     threading.Thread(target=download_mimic_iii_records, args=(RecordFiles[5824:11647], OutputPath), daemon=True)
-#     threading.Thread(target=download_mimic_iii_records, args=(RecordFiles[11647:17470], OutputPath), daemon=True)
-#     threading.Thread(target=download_mimic_iii_records, args=(RecordFiles[17470:23293], OutputPath), daemon=True)
-#     threading.Thread(target=download_mimic_iii_records, args=(RecordFiles[23293:29116], OutputPath), daemon=True)
-#     threading.Thread(target=download_mimic_iii_records, args=(RecordFiles[29116:34939], OutputPath), daemon=True)"""
     
 
 if __name__ == '__main__':
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument('input', type=str,
-    #                     help='File containing the names of the records downloaded from the MIMIC-III DB')
-    # parser.add_argument('output', type=str, help='Folder for storing downloaded MIMIC-III records')
-
-    # args = parser.parse_args()
-
-    # RecordsFile = args.input
-    # OutputPath = args.output
-
+    
+    # Create a destination dir as "Dataset_raw" either manually or using os.mkdir 
     download_mimic_iii_records('MIMIC-III_ppg_dataset_records.txt', "./Dataset_raw")
-    #main('MIMIC-III_ppg_dataset_records.txt', "./Dataset")
     
